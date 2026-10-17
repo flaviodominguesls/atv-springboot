@@ -1,9 +1,13 @@
 package biblioteca.biblioteca.Service;
 
-import biblioteca.biblioteca.Dto.LivroPostPutDto;
+import biblioteca.biblioteca.Dto.LivroPostDto;
+import biblioteca.biblioteca.Dto.LivroPutDto;
 import biblioteca.biblioteca.Dto.LivroResponseDto;
+import biblioteca.biblioteca.Model.Autor;
 import biblioteca.biblioteca.Model.Livro;
+import biblioteca.biblioteca.Repository.AutorRepository;
 import biblioteca.biblioteca.Repository.LivroRepository;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.ArrayList;
 
 @Service
 public class LivroCrudPadraoService implements LivroCrudService {
@@ -21,9 +26,17 @@ public class LivroCrudPadraoService implements LivroCrudService {
     @Autowired
     LivroRepository livroRepository;
 
+    @Autowired
+    AutorRepository autorRepository;
+
     @Override
-    public LivroResponseDto criarLivro(LivroPostPutDto livroPostPutDto) {
-        Livro livro = modelMapper.map(livroPostPutDto, Livro.class);
+    public LivroResponseDto criarLivro(LivroPostDto livroPostDto) {
+        if (livroRepository.existsById(livroPostDto.getIsbn())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "ISBN já cadastrado");
+        }
+
+        Livro livro = modelMapper.map(livroPostDto, Livro.class);
+        livro.setAutor(obterAutorExistente(livroPostDto.getAutorId()));
         return modelMapper.map(livroRepository.save(livro), LivroResponseDto.class);
     }
 
@@ -36,41 +49,53 @@ public class LivroCrudPadraoService implements LivroCrudService {
     }
 
     @Override
-    public LivroResponseDto buscarLivroPorISBN(Long isbn) {
-        return modelMapper.map(obterLivroExistentePorISBN(isbn), LivroResponseDto.class);
+    public LivroResponseDto buscarLivro(String isbn) {
+        return modelMapper.map(obterLivroExistente(isbn), LivroResponseDto.class);
     }
 
     @Override
-    public LivroResponseDto buscarLivroPorTitulo(String titulo) {
-        return modelMapper.map(obterLivroExistentePorTitulo(titulo), LivroResponseDto.class);
-    }
-
-    @Override
-    public LivroResponseDto atualizarLivro(Long isbn, LivroPostPutDto livroPostPutDto) {
-        Livro livro = obterAutorExistente(isbn);
-        livro.setAutorLivro(livroPostPutDto.getAutorLivro());
-        livro.setAnoLivro(livroPostPutDto.getAnoLivro());
-        livro.setEdicaoLivro(livroPostPutDto.getEdicaoLivro());
-        livro.setTituloLivro(livroPostPutDto.getTituloLivro());
+    public LivroResponseDto atualizarLivro(String isbn, LivroPutDto livroPutDto) {
+        Livro livro = obterLivroExistente(isbn);
+        livro.setAno(livroPutDto.getAno());
+        livro.setAutor(obterAutorExistente(livroPutDto.getAutorId()));
+        livro.setEdicao(livroPutDto.getEdicao());
+        livro.setTituloLivro(livroPutDto.getTituloLivro());
         return modelMapper.map(livroRepository.save(livro), LivroResponseDto.class);
     }
 
     @Override
-    public void removerLivro(Long isbn) {
-        // delete(entidade) permite que o cascade da relação remova também os livros do autor
+    public void removerLivro(String isbn) {
         livroRepository.delete(obterLivroExistente(isbn));
     }
 
-    // id inexistente = 404
-    private Livro obterLivroExistentePorISBN(Long isbn) {
+    @Override
+    public List<LivroResponseDto> buscaPorTitulo(String titulo) {
+        List<Livro> livros = livroRepository.findByTituloLivroContainingIgnoreCase(titulo);
+        List<LivroResponseDto> livrosDto = new ArrayList<>();
+        for(Livro livro: livros){
+            livrosDto.add(modelMapper.map(livro, LivroResponseDto.class));
+        }
+        return livrosDto;
+    }
+    
+    @Override
+    public List<LivroResponseDto> buscaPorIsbn(String isbn) {
+        List<Livro> livros = livroRepository.findByIsbnContainingIgnoreCase(isbn);
+        List<LivroResponseDto> livrosDto = new ArrayList<>();
+        for(Livro livro: livros){
+            livrosDto.add(modelMapper.map(livro, LivroResponseDto.class));
+        }
+        return livrosDto;
+    }
+
+    private Livro obterLivroExistente(String isbn) {
         return livroRepository.findById(isbn)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Livro não encontrado"));
     }
 
-// id inexistente = 404
-    private Livro obterLivroExistentePorTitulo(String titulo) {
-        return livroRepository.findAll()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Livro não encontrado"));
+    private Autor obterAutorExistente(Long autorId) {
+        return autorRepository.findById(autorId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Autor não encontrado"));
     }
 
 }

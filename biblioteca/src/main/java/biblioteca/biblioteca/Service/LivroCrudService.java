@@ -1,21 +1,24 @@
 package biblioteca.biblioteca.Service;
 
-import biblioteca.biblioteca.Dto.LivroPostPutDto;
+import biblioteca.biblioteca.Dto.LivroPostDto;
+import biblioteca.biblioteca.Dto.LivroPutDto;
 import biblioteca.biblioteca.Dto.LivroResponseDto;
 
 import java.util.List;
 
 public interface LivroCrudService {
 
-    LivroResponseDto criarLivro(LivroPostPutDto livroPostPutDto);
+    LivroResponseDto criarLivro(LivroPostDto livroPostDto);
 
     List<LivroResponseDto> buscarTodosLivros();
 
-    LivroResponseDto buscarLivroPorISBN(Long isbn);
+    LivroResponseDto buscarLivro(String isbn);
 
-    LivroResponseDto buscarLivroPorTitulo(String titulo);
+    List<LivroResponseDto> buscaPorTitulo(String titulo);
 
-    LivroResponseDto atualizarLivro(Long isbn, LivroPostPutDto livroPostPutDto);
+    List<LivroResponseDto> buscaPorIsbn(String isbn);
 
-    void removerLivro(Long isbn);
+    LivroResponseDto atualizarLivro(String isbn, LivroPutDto livroPutDto);
+
+    void removerLivro(String isbn);
 }

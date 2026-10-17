@@ -10,20 +10,19 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class LivroPostPutDto {
-
+public class LivroResponseDto {
     @JsonProperty("isbn")
-    private Long isbn;
+    private String isbn;
 
     @JsonProperty("tituloLivro")
     private String tituloLivro;
 
-    @JsonProperty("autorLivro")
-    private String autorLivro;
+    @JsonProperty("autor")
+    private AutorResponseDto autor;
 
-    @JsonProperty("anoLivro")
-    private String anoLivro;
+    @JsonProperty("ano")
+    private int ano;
 
-    @JsonProperty("edicaoLivro")
-    private String edicaoLivro;
+    @JsonProperty("edicao")
+    private int edicao;
 }
